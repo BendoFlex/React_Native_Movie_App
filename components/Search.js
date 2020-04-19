@@ -19,13 +19,15 @@ class Search extends React.Component {
 
  }
   
-  _loadFilms(text){
+  _loadFilms(){
     console.log(this.state.isLoading)
     this.setState({isLoading:true})
     if (this.searchedText.length > 0){
-     getFilmsFromApiWithSearchedText(text,this.page).then(data => {
+     getFilmsFromApiWithSearchedText(this.searchedText,this.page+1).then(data => {
+       this.page = data.page;
+       this.total_pages = data.total_pages;
        this.setState({
-         films : data.results,
+         films : [...this.state.films, ...data.results],  // concaténer les anciennes données + les nouvelles
          isLoading: false
         });
      })
@@ -34,7 +36,14 @@ class Search extends React.Component {
   }
 
   searchFilms(){
-
+    this.page = 0;
+    this.total_pages = 0;
+    this.setState({
+      films : []  //state a 0
+    }, () => {
+      this._loadFilms() //Callback Du SetState
+    })
+    
   }
 
   _handleChangeText(text){
@@ -67,16 +76,16 @@ class Search extends React.Component {
         <Image style={styles.logo} source={require('../assets/movie_logo.png')} />
         <TextInput placeholder='Mon Film' 
                   onChangeText={(text) => this._handleChangeText(text)} 
-                  onSubmitEditing={()=> this._loadFilms(this.searchedText)}
+                  onSubmitEditing={()=> this._searchFilms()}
                   />
-        <Button title="Rechercher" onPress={()=> this._loadFilms(this.searchedText)}></Button>
+        <Button title="Rechercher" onPress={()=> this._searchFilms()}></Button>
         <FlatList
         data={this.state.films} //on passe des props l'objet film
         keyExtractor= {(item) => item.id.toString() }
         renderItem={ ({item}) => <FilmItem film={item}/>}// film est notre item 
         onEndReached={() => {
           if(this.page < this.total_pages){
-              this._loadFilms();
+              this._loadFilms(); // on reload les films en plus
           }
         }}
         />
